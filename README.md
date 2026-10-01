@@ -13,16 +13,19 @@ To know if you are on a eduquiz.vn instance, you might need to consider if the f
 If most of the conditions above are true, try to run the [detect.js](./detect.js) in the browser console to see if your teacher is using eduquiz.vn's private instance.
 
 # userscript for instances
-- After you have added the tampermonkey userscript, you still need to perform a manual edit because I don't know your teacher's domain.
-Edit this line in the tampermonkey script:
+- After you have added the tampermonkey userscript, you still need to perform a manual edit because I don't know your teacher's `lms` domain.
+1. click on the tampermonkey extension icon, try to open the popup (it should show a popup with menu to find new scripts or create new script)
+2. click on the `Dashboard` button.
+3. click on the name of the script you installed. If you install answer cheat, click on `eduquiz_answer`.
+4. edit this line in the tampermonkey script:
 ```js
-// @match        https://lms.eduquiz.vn/hoc-sinh/*
+// @match        https://lms.eduquiz.vn/*
 ```
 
 to **your school or academy's domain for the `lms` system**:
 
 ```js
-// @match        https://lms.school.edu.vn/hoc-sinh/*
+// @match        https://lms.school.edu.vn/*
 ```
 
 > [!note]

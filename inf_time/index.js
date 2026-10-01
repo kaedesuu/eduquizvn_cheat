@@ -45,7 +45,7 @@
 
   const _o_replace_state = window?.history?.replaceState || history?.replaceState;
   window.history.replaceState = (...data) => {
-    if (!in_exam_url()) {
+    if (in_exam_url()) {
       main();
     } else {
       // clean all hooks and watchers
@@ -59,5 +59,5 @@
     return _o_replace_state.apply(window.history, data);
   }
 
-  if (!in_exam_url()) { main(); }
+  if (in_exam_url()) { main(); }
 })();

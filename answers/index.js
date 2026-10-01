@@ -55,15 +55,31 @@
       return removed_c.map((_page) => Number(_page));
     }
 
-    const get_working_question_status = async (status_elements) => {
+    const get_working_question_status = async (status_elements, retries) => {
       // make sure still in exam
       if (!in_exam_url()) return;
+
+      // already in the exam but failed to get due to missing element?
+      // if *-question-id-* id exist but can't find group/badge => the exam removes it on purpose?
+      if (
+        document.querySelectorAll(`button[id*="-question-dot-"]`).length > 0 &&
+        retries > 2
+        // && status_elements.length <= 0 // this check isn't really needed
+      ) {
+        console.log("failed to get normal question status element, retry with a different element...")
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        return get_working_question_status(
+          document.querySelectorAll(`span[class*="text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2.5 py-0.5 rounded-md"]`),
+          0
+        )
+      }
 
       if (status_elements.length <= 0) {
         console.log("failed to get question status, retry...");
         await new Promise((resolve) => setTimeout(resolve, 5000));
         return get_working_question_status(
-          document.getElementsByClassName("group/badge")
+          document.getElementsByClassName("group/badge"),
+          (retries || 0) + 1
         );
       }
 
@@ -77,7 +93,8 @@
         console.log("failed to get question status, retry...");
         await new Promise((resolve) => setTimeout(resolve, 5000));
         return get_working_question_status(
-          document.getElementsByClassName("group/badge")
+          document.getElementsByClassName("group/badge"),
+          (retries || 0) + 1
         );
       }
 
@@ -85,7 +102,10 @@
     }
 
     let exam_code = window.location.href.split("?")[0].split("/").splice(-1)[0];
-    let raw_shuffled_question_order = window.sessionStorage.getItem(`exam_shuffled_order_${exam_code}_${student_code}`);
+    let raw_shuffled_question_key = Object.keys(window.sessionStorage).filter(
+      (k) => k.includes(`exam_shuffled_order_${exam_code}_${student_code}`)
+    ).splice(-1)[0] ?? "";
+    let raw_shuffled_question_order = window.sessionStorage.getItem(raw_shuffled_question_key);
     let shuffled_question_order = null;
 
     const get_shuffled_question_order = async () => {
@@ -94,7 +114,10 @@
 
       // update variable before getting the question order 
       exam_code = window.location.href.split("?")[0].split("/").splice(-1)[0];
-      raw_shuffled_question_order = window.sessionStorage.getItem(`exam_shuffled_order_${exam_code}_${student_code}`);
+      raw_shuffled_question_key = Object.keys(window.sessionStorage).filter(
+        (k) => k.includes(`exam_shuffled_order_${exam_code}_${student_code}`)
+      ).splice(-1)[0] ?? "";
+      raw_shuffled_question_order = window.sessionStorage.getItem(raw_shuffled_question_key);
 
       // checks
       if (typeof raw_shuffled_question_order !== "string") {
@@ -132,29 +155,35 @@
         switch(curr_answer?.type) {
           case "single-choice":
             // clear all answer highlight
-            for (const _button of document.querySelectorAll(`button[class*="flex items-start"]`)) {
+            for (const _button of document.querySelectorAll(`label[class*="flex items-center gap-3"]`)) {
               _button.style.borderColor = "var(--border)";
             }
 
             // get all answer buttons
-            document.querySelectorAll(`button[class*="flex items-start"]`)[ answer_buttons_order[curr_answer?.correctKey] ].style.borderColor = "#ffffff";
+            document.querySelectorAll(`label[class*="flex items-center gap-3"]`)[ answer_buttons_order[curr_answer?.correctKey] ].style.borderColor = "#ffffff";
             break;
           case "true-false":
             const sub_items = curr_answer?.subItems;
             const true_false_arr = sub_items.map((el) => el.isCorrect === true);
 
             // clear all true-false highlight
-            for (const _button of document.querySelectorAll(`button[class*="px-3.5 py-1.5 rounded-lg border"]`)) {
-              _button.style.borderColor = "var(--border)";
+            for (const _button of document.querySelectorAll(`div[class*="flex items-center gap-2 shrink-0"]`)) {
+              const true_false_div = _button[0];
+              const true_button = true_false_div[0] ?? { "style": {} };
+              const false_button = true_false_div[1] ?? { "style": {} };
+
+              true_button.style.borderColor = "var(--border)";
+              false_button.style.borderColor = "var(--border)";
             }
             
             for (let i = 0; i < true_false_arr.length; i++) {
-              const true_false_buttons = document.querySelectorAll(`button[class*="px-3.5 py-1.5 rounded-lg border"]`);
-              const c_option = true_false_arr[i];
-              const calc_index = (i*2) + (c_option === false ? 1 : 0);
-              if (calc_index >= true_false_buttons.length) continue;
+              const true_false_div =
+                document.querySelectorAll(`div[class*="flex items-center gap-2 shrink-0"]`)[i]
+                  ?? { children: [] };
 
-              true_false_buttons[calc_index].style.borderColor = "#ffffff";
+              const c_option = true_false_arr[i];
+              const true_false_button = true_false_div[c_option === true ? 0 : 1] ?? { "style": {} };
+              true_false_button.style.borderColor = "#ffffff";
             }
             break;
           case "short-answer":
@@ -211,18 +240,14 @@
   window.fetch = async (...data) => {
     const input_url = data[0] instanceof Request ? data[0].url : data[0]?.toString();
     if (
-      !(
-        input_url.includes("/hoc-sinh/luyen-de") &&
-        input_url.includes("curriculumId")
-      ) &&
+      !in_exam_url() &&
       !(
         input_url.includes("hoc-sinh") &&
         ((data[1]?.method) ?? "GET") === "POST" &&
         (
           is_json(data[1]?.body) ? JSON.parse(data[1]?.body) : { length: 0 }
         ).length <= 0
-      ) &&
-      !input_url.includes("/hoc-sinh/bai-tap-ve-nha")
+      )
     ) {
       return o_fetch(...data);
     }
