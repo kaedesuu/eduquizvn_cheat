@@ -2,15 +2,16 @@
   const o_fetch = window.fetch;
   let status_ob = null;
   let student_code = "";
+  const question_id = [];
   const question_map = new Map();
 
   const is_num = (n) => !isNaN(Number(n));
-  const in_exam_url = () =>
+  const in_exam_url = (_url) =>
     (
-      window?.location?.href?.toString().includes("hoc-sinh/luyen-de") ||
-      window?.location?.href?.toString().includes("hoc-sinh/bai-tap-ve-nha")
-    ) &&
-     window.location.href.split("?")[0].split("/").splice(-1)[0].split("-").length === 2 // most exam code in format: "AB-12345678";
+      (_url ?? window?.location?.href)?.toString().includes("hoc-sinh/luyen-de") ||
+      (_url ?? window?.location?.href)?.toString().includes("hoc-sinh/bai-tap-ve-nha")
+    ) && // the .length === 2 check shouldn't use _url since the application code can send in full url or routes, it's unpredictable.
+     window.location.href?.toString().split("?")[0].split("/").splice(-1)[0].split("-").length === 2; // most exam code in format: "AB-12345678";
 
   // from stackoverflow
   const is_json = (item) => {
@@ -119,7 +120,16 @@
       ).splice(-1)[0] ?? "";
       raw_shuffled_question_order = window.sessionStorage.getItem(raw_shuffled_question_key);
 
-      // checks
+      // maybe no shuffle for the exam?
+      if (
+        typeof raw_shuffled_question_order !== "string" &&
+        typeof exam_code !== "undefined" &&
+        typeof student_code !== "undefined"
+      ) {
+        raw_shuffled_question_order = JSON.stringify(question_id);
+      }
+
+      // checks      
       if (typeof raw_shuffled_question_order !== "string") {
         console.log("failed to get shuffled question order, retry...");
         await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -223,7 +233,7 @@
 
       // normal checking
       for (const mutation of mutation_list) {
-        if (mutation.type !== "characterData" && imutation.type !== "childList")
+        if (mutation?.type !== "characterData" && imutation?.type !== "childList")
           continue;
 
         const _valid_status_report = is_valid_status_reporter(working_status_elements, 0);
@@ -240,7 +250,7 @@
   window.fetch = async (...data) => {
     const input_url = data[0] instanceof Request ? data[0].url : data[0]?.toString();
     if (
-      !in_exam_url() &&
+      !in_exam_url(input_url) &&
       !(
         input_url.includes("hoc-sinh") &&
         ((data[1]?.method) ?? "GET") === "POST" &&
@@ -257,13 +267,21 @@
 
     const data_body = res_text.split("\n");
     if (data_body.length >= 2) {
-      const exam_data_raw_unsafe = data_body[1].split(":").splice(1);
-      let exam_data_raw = null;
+      // this method to find safe string is really buggy, but it works
+      // i hate RSC stuff, RSC parsing is hard.
+      const exam_data_raw_unsafe = data_body.filter((el) => el?.toString()?.includes("1:"));
+      let _exam_data_raw = null;
 
       // find safe json string
       for (let i = 0; i < exam_data_raw_unsafe.length; i++) {
         if (!exam_data_raw_unsafe[i].includes("{")) continue;
-        exam_data_raw = exam_data_raw_unsafe.splice(i).join(":");
+        _exam_data_raw = exam_data_raw_unsafe.splice(i).join(":").split("1:");
+        break;
+      }
+
+      for (let i = 0; i < _exam_data_raw.length; i++) {
+        if (!_exam_data_raw[i].includes("{")) continue;
+        exam_data_raw = _exam_data_raw.splice(i).join(":");
         break;
       }
 
@@ -310,7 +328,11 @@
       
       // O(n) loop to recreate the map for faster O(1) access in the future
       for (const _data of question_data) {
+        // for shuffle
         question_map.set(_data?.id, _data);
+
+        // for non-shuffle
+        question_id.push(_data?.id);
       }
     }
 
