@@ -39,7 +39,8 @@ to **your school or academy's domain for the `lms` system**:
 - [anti_proctor](./anti_proctor/): allow user to exit fullscreen without trigger proctoring (also please read the note carefully in the [anti_proctor's README.md](./anti_proctor/README.md))
 
 > [!note]
-> as of now, you can only install 1 userscript due to 2 userscripts hook the same function.
+> as of now, you can only enable 1 userscript due to userscripts hook the same function.\
+> you can install 3 userscripts and enable only one, and then disable the others to use that specific cheat userscript you enabled.
 
 # disclaimer
 The content and code in this repository are provided solely for **educational and research purposes**.\

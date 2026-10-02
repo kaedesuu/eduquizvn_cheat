@@ -1,7 +1,7 @@
 # inf_time
 > [!note]
-> description: make the exam time infinite.
-> usage: install the tampermonkey userscript and read the [#userscript for instances](../README.md/#userscript-for-instances).
+> - description: make the exam time infinite.
+> - usage: install the tampermonkey userscript and read the [#userscript for instances](../README.md/#userscript-for-instances).
 
 To install the script, you need to:
 1. install tampermonkey.
