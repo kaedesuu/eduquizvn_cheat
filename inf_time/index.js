@@ -1,6 +1,6 @@
 ;(() => {
   const o_fetch = window.fetch;
-  const duration_time = (20n ** 200n - 1n).toString();
+  const duration_time = "9999".padEnd(400, "0");
   const is_num = (n) => !isNaN(Number(n));
   let interval_storage = null;
   const in_exam_url = () =>

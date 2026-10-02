@@ -35,7 +35,8 @@ to **your school or academy's domain for the `lms` system**:
 1. install userscripts extension. I recommend using tampermonkey.
 2. choose **a script** you want to install:
 - [answers](./answers): get correct answers for exams and homeworks from the instance's backend.
-- [inf_time](./inf_time/): make the exam time almost infinite.
+- [inf_time](./inf_time/): make the exam time infinite.
+- [anti_proctor](./anti_proctor/): allow user to exit fullscreen without trigger proctoring (also please read the note carefully in the [anti_proctor's README.md](./anti_proctor/README.md))
 
 > [!note]
 > as of now, you can only install 1 userscript due to 2 userscripts hook the same function.
